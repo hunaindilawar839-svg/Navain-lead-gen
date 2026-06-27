@@ -593,7 +593,25 @@
   <span id="toast-text">Done!</span>
 </div>
 
-<script>
+<!-- Firebase SDK -->
+<script type="module">
+// ─── FIREBASE SETUP ──────────────────────────────────────
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzuGGwU7hO_LyR8QLWRd_c7GQ9vbOyZoc",
+  authDomain: "navainleads.firebaseapp.com",
+  projectId: "navainleads",
+  storageBucket: "navainleads.firebasestorage.app",
+  messagingSenderId: "625025386550",
+  appId: "1:625025386550:web:11fdaaf60758bbd422f097",
+  measurementId: "G-L190H0VSQS"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 // ─── STATE ───────────────────────────────────────────────
 let state = {
   employees: [],
@@ -607,18 +625,114 @@ let state = {
   settings: { niches: ['HVAC','Plumbing','Auto Repair','Electrical','Roofing','Realtor'], priority: 'hot-warm' }
 };
 
-// Load from localStorage
-function loadState() {
+// ─── FIREBASE SAVE / LOAD ────────────────────────────────
+async function saveState() {
   try {
-    const saved = localStorage.getItem('navain_automation');
-    if (saved) state = { ...state, ...JSON.parse(saved) };
-    if (state.nextRunTime) state.nextRunTime = new Date(state.nextRunTime);
-    else scheduleNext();
-  } catch(e) { scheduleNext(); }
+    // Save core settings doc
+    await setDoc(doc(db, 'navain', 'appState'), {
+      runs: state.runs,
+      logs: state.logs,
+      notifications: state.notifications,
+      nextRunTime: state.nextRunTime ? state.nextRunTime.toISOString() : null,
+      intervalDays: state.intervalDays,
+      bossWhatsapp: state.bossWhatsapp,
+      settings: state.settings
+    });
+
+    // Save employees as individual docs
+    const batch = writeBatch(db);
+    state.employees.forEach(emp => {
+      batch.set(doc(db, 'employees', emp.id), emp);
+    });
+    await batch.commit();
+
+    // Save generatedLeads as individual docs per employee
+    const leadsBatch = writeBatch(db);
+    Object.entries(state.generatedLeads).forEach(([empId, runs]) => {
+      leadsBatch.set(doc(db, 'generatedLeads', empId), { runs });
+    });
+    await leadsBatch.commit();
+
+  } catch(e) {
+    console.error('Firebase save error:', e);
+    // Fallback to localStorage
+    try { localStorage.setItem('navain_automation', JSON.stringify(state)); } catch(le) {}
+  }
 }
 
-function saveState() {
-  try { localStorage.setItem('navain_automation', JSON.stringify(state)); } catch(e) {}
+async function loadState() {
+  try {
+    showLoadingBanner(true);
+
+    // Load appState
+    const appSnap = await getDoc(doc(db, 'navain', 'appState'));
+    if (appSnap.exists()) {
+      const data = appSnap.data();
+      state.runs = data.runs || [];
+      state.logs = data.logs || [];
+      state.notifications = data.notifications || [];
+      state.intervalDays = data.intervalDays || 5;
+      state.bossWhatsapp = data.bossWhatsapp || '';
+      state.settings = data.settings || state.settings;
+      state.nextRunTime = data.nextRunTime ? new Date(data.nextRunTime) : null;
+    }
+
+    // Load employees
+    const empSnap = await getDocs(collection(db, 'employees'));
+    state.employees = [];
+    empSnap.forEach(d => state.employees.push(d.data()));
+
+    // Load generatedLeads
+    const leadsSnap = await getDocs(collection(db, 'generatedLeads'));
+    state.generatedLeads = {};
+    leadsSnap.forEach(d => { state.generatedLeads[d.id] = d.data().runs || []; });
+
+    if (!state.nextRunTime) scheduleNext();
+
+  } catch(e) {
+    console.error('Firebase load error:', e);
+    // Fallback to localStorage
+    try {
+      const saved = localStorage.getItem('navain_automation');
+      if (saved) state = { ...state, ...JSON.parse(saved) };
+      if (state.nextRunTime) state.nextRunTime = new Date(state.nextRunTime);
+      else scheduleNext();
+    } catch(le) { scheduleNext(); }
+  } finally {
+    showLoadingBanner(false);
+    // Pre-add Abiha if no employees exist in DB
+    if (state.employees.length === 0) {
+      state.employees.push({
+        id: 'abiha-default',
+        name: 'Abiha',
+        role: 'Sales Rep',
+        whatsapp: '',
+        quota: 20,
+        locations: 'Mississippi',
+        color: '#00e5ff',
+        colorbg: '#00e5ff20',
+        niches: ['HVAC','Plumbing','Auto Repair','Electrical','Roofing'],
+        total_generated: 0
+      });
+      await saveState();
+    }
+    renderAll();
+    renderActivityLog();
+    updateCountdown();
+    if (state.bossWhatsapp) document.getElementById('boss-whatsapp').value = state.bossWhatsapp;
+  }
+}
+
+function showLoadingBanner(show) {
+  let banner = document.getElementById('fb-loading-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'fb-loading-banner';
+    banner.style.cssText = 'position:fixed;top:56px;left:0;right:0;background:#00e5ff15;border-bottom:1px solid #00e5ff30;padding:8px 28px;font-size:11px;color:#00e5ff;font-family:monospace;z-index:99;display:flex;align-items:center;gap:8px';
+    banner.innerHTML = '<span style="animation:pulse 1s infinite;display:inline-block">⚡</span> Connecting to Firebase...';
+    document.body.appendChild(banner);
+  }
+  banner.style.display = show ? 'flex' : 'none';
 }
 
 // ─── SAMPLE LEAD DATA ────────────────────────────────────
@@ -946,12 +1060,14 @@ function saveEmployee() {
   showToast(`✅ ${name} ${editId ? 'updated' : 'added'} successfully`);
 }
 
-function deleteEmployee(id) {
+async function deleteEmployee(id) {
   const emp = state.employees.find(e => e.id === id);
   if (!emp) return;
   if (!confirm(`Remove ${emp.name}? Their generated leads will still be available.`)) return;
   state.employees = state.employees.filter(e => e.id !== id);
   addLog(`🗑 Employee "${emp.name}" removed`, '⚠️');
+  // Remove from Firestore
+  try { await deleteDoc(doc(db, 'employees', id)); } catch(e) { console.error('Delete employee error:', e); }
   saveState();
   renderAll();
   showToast(`Removed ${emp.name}`);
@@ -1263,8 +1379,18 @@ function clearLog() {
   showToast('Activity log cleared');
 }
 
-function resetAll() {
+async function resetAll() {
   if (!confirm('Reset ALL data? This cannot be undone.')) return;
+  try {
+    // Delete all Firestore docs
+    const batch = writeBatch(db);
+    const empSnap = await getDocs(collection(db, 'employees'));
+    empSnap.forEach(d => batch.delete(d.ref));
+    const leadsSnap = await getDocs(collection(db, 'generatedLeads'));
+    leadsSnap.forEach(d => batch.delete(d.ref));
+    batch.delete(doc(db, 'navain', 'appState'));
+    await batch.commit();
+  } catch(e) { console.error('Firebase reset error:', e); }
   localStorage.removeItem('navain_automation');
   location.reload();
 }
@@ -1291,37 +1417,14 @@ function showToast(text, type = 'success') {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ─── INIT ────────────────────────────────────────────────
+// loadState() is async (Firebase) — it calls renderAll internally when done
 loadState();
-
-// Pre-add Abiha if no employees
-if (state.employees.length === 0) {
-  state.employees.push({
-    id: 'abiha-default',
-    name: 'Abiha',
-    role: 'Sales Rep',
-    whatsapp: '',
-    quota: 20,
-    locations: 'Mississippi',
-    color: '#00e5ff',
-    colorbg: '#00e5ff20',
-    niches: ['HVAC','Plumbing','Auto Repair','Electrical','Roofing'],
-    total_generated: 0
-  });
-  saveState();
-}
-
-renderAll();
-renderActivityLog();
-updateCountdown();
 
 // Tick every second
 setInterval(() => {
   updateCountdown();
   checkSchedule();
 }, 1000);
-
-// Load boss WhatsApp if saved
-if (state.bossWhatsapp) document.getElementById('boss-whatsapp').value = state.bossWhatsapp;
 </script>
 </body>
 </html>
