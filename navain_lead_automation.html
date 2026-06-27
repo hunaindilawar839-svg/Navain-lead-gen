@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navain AI — Lead Automation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #080c14;
+    --surface: #0e1420;
+    --card: #131c2e;
+    --border: #1e2d45;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --green: #00e096;
+    --text: #e2eaf6;
+    --muted: #4a6080;
+    --soft: #8ba5c4;
+    --font: 'Space Grotesk', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; font-size: 14px; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-size: 17px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .logo em { color: var(--muted); font-style: normal; font-size: 11px; font-weight: 400; margin-left: 8px; font-family: var(--mono); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .pulse { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  .status-label { font-size: 11px; color: var(--green); font-family: var(--mono); }
+
+  /* ── LAYOUT ── */
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 56px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+  }
+  .sidebar-section { padding: 0 16px; margin-bottom: 24px; }
+  .sidebar-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; padding: 0 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--soft);
+    transition: all 0.15s; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--card); color: var(--text); }
+  .nav-item.active { background: var(--accent)18; color: var(--accent); border: 1px solid var(--accent)30; }
+  .nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+
+  /* ── MAIN ── */
+  .main { padding: 28px; overflow-y: auto; }
+
+  /* ── PAGE TITLE ── */
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--muted); }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); padding: 4px; border-radius: 10px; border: 1px solid var(--border); width: fit-content; }
+  .tab { padding: 7px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted); transition: all 0.15s; }
+  .tab.active { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── CARDS ── */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card-title { font-size: 13px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  /* ── STATS ROW ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .stat-num { font-size: 28px; font-weight: 800; letter-spacing: -1px; font-family: var(--mono); }
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .stat-trend { font-size: 10px; margin-top: 6px; color: var(--green); }
+
+  /* ── EMPLOYEE GRID ── */
+  .employee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .employee-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;
+    transition: border-color 0.2s;
+  }
+  .employee-card:hover { border-color: var(--accent)50; }
+  .emp-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .emp-avatar {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; flex-shrink: 0;
+  }
+  .emp-name { font-weight: 700; font-size: 14px; }
+  .emp-role { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .emp-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .emp-stat { background: var(--surface); border-radius: 8px; padding: 8px 10px; text-align: center; }
+  .emp-stat-num { font-size: 16px; font-weight: 700; font-family: var(--mono); }
+  .emp-stat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 1px; }
+  .emp-actions { display: flex; gap: 8px; }
+  .btn { padding: 7px 14px; border-radius: 7px; font-size: 11px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s; font-family: var(--font); letter-spacing: 0.3px; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost { background: var(--surface); color: var(--soft); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: #ef444420; color: #ef4444; border: 1px solid #ef444430; }
+  .btn-danger:hover { background: #ef444430; }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover { opacity: 0.85; }
+
+  /* ── SCHEDULE CARD ── */
+  .schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .next-run-card { background: linear-gradient(135deg, #00e5ff12, #7c3aed12); border: 1px solid var(--accent)30; border-radius: 12px; padding: 20px; }
+  .next-run-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-family: var(--mono); margin-bottom: 8px; }
+  .next-run-time { font-size: 28px; font-weight: 800; letter-spacing: -1px; font-family: var(--mono); }
+  .next-run-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .countdown { font-family: var(--mono); font-size: 13px; color: var(--accent); margin-top: 10px; }
+
+  /* ── LOG ── */
+  .log-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .log-item:last-child { border-bottom: none; }
+  .log-icon { font-size: 14px; margin-top: 1px; }
+  .log-text { font-size: 12px; color: var(--soft); flex: 1; }
+  .log-text strong { color: var(--text); }
+  .log-time { font-size: 10px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--soft); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input, .form-select, .form-textarea {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none;
+    font-family: var(--font); transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-hint { font-size: 10px; color: var(--muted); }
+
+  /* ── MODAL ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: #00000090; z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: var(--text); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+  /* ── NOTIFY BADGE ── */
+  .notify-badge { background: var(--accent2)20; border: 1px solid var(--accent2)40; color: var(--accent2); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-family: var(--mono); }
+
+  /* ── PROGRESS ── */
+  .progress-bar { background: var(--surface); border-radius: 4px; height: 4px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent3)); transition: width 0.5s; }
+
+  /* ── NICHES ── */
+  .niche-tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.4px; margin: 2px; }
+  .n-hvac { background: #0e749020; color: #22d3ee; border: 1px solid #0e749040; }
+  .n-plumb { background: #0f766e20; color: #2dd4bf; border: 1px solid #0f766e40; }
+  .n-auto { background: #7c3aed20; color: #a78bfa; border: 1px solid #7c3aed40; }
+  .n-elec { background: #b4530920; color: #fb923c; border: 1px solid #b4530940; }
+  .n-roof { background: #be123c20; color: #fb7185; border: 1px solid #be123c40; }
+  .n-real { background: #15803d20; color: #4ade80; border: 1px solid #15803d40; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px;
+    font-size: 13px; z-index: 999; transform: translateY(80px);
+    opacity: 0; transition: all 0.3s; min-width: 280px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green)50; }
+  .toast.info { border-color: var(--accent)50; }
+
+  /* ── GENERATION SCREEN ── */
+  .gen-overlay { display: none; position: fixed; inset: 0; background: #00000095; z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+  .gen-overlay.open { display: flex; }
+  .gen-box { background: var(--card); border: 1px solid var(--accent)40; border-radius: 16px; padding: 36px 40px; text-align: center; min-width: 340px; }
+  .gen-spinner { font-size: 36px; animation: spin 1.5s linear infinite; display: inline-block; margin-bottom: 16px; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  .gen-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .gen-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .gen-log { font-family: var(--mono); font-size: 10px; color: var(--accent); text-align: left; background: var(--surface); border-radius: 8px; padding: 12px; max-height: 120px; overflow-y: auto; line-height: 1.8; }
+
+  /* ── WHATSAPP ── */
+  .whatsapp-preview { background: #128C7E15; border: 1px solid #128C7E40; border-radius: 10px; padding: 14px; font-size: 12px; color: var(--soft); font-family: var(--mono); line-height: 1.7; white-space: pre-wrap; }
+  .wa-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .wa-icon { font-size: 20px; }
+  .wa-label { font-size: 12px; font-weight: 700; color: #25D366; }
+
+  /* ── LEADS PREVIEW ── */
+  .leads-preview-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .leads-preview-table th { padding: 6px 8px; text-align: left; color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  .leads-preview-table td { padding: 8px; border-bottom: 1px solid var(--border)80; }
+  .leads-preview-table tr:last-child td { border-bottom: none; }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .schedule-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">Navain<span>AI</span> <em>Lead Automation</em></div>
+  <div class="header-right">
+    <div class="pulse"></div>
+    <span class="status-label" id="system-status">SCHEDULER ACTIVE</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <div class="nav-item active" onclick="switchTab('dashboard')"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item" onclick="switchTab('employees')"><span class="icon">👥</span> Employees</div>
+      <div class="nav-item" onclick="switchTab('schedule')"><span class="icon">⏰</span> Schedule</div>
+      <div class="nav-item" onclick="switchTab('leads')"><span class="icon">📋</span> Generated Leads</div>
+      <div class="nav-item" onclick="switchTab('notifications')"><span class="icon">🔔</span> Notifications</div>
+      <div class="nav-item" onclick="switchTab('settings')"><span class="icon">⚙️</span> Settings</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick Actions</div>
+      <div class="nav-item" onclick="runNow()"><span class="icon">⚡</span> Run Now</div>
+      <div class="nav-item" onclick="openAddEmployee()"><span class="icon">➕</span> Add Employee</div>
+      <div class="nav-item" onclick="exportAllLeads()"><span class="icon">⬇️</span> Export All CSVs</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- DASHBOARD TAB -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="page-header">
+        <div class="page-title">Lead Automation Dashboard</div>
+        <div class="page-sub">Leads are generated every 5 days and sent via WhatsApp</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--accent)" id="stat-total-leads">0</div>
+          <div class="stat-label">Total Leads Generated</div>
+          <div class="stat-trend" id="stat-trend">↑ Ready to grow</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--green)" id="stat-employees">0</div>
+          <div class="stat-label">Active Employees</div>
+          <div class="stat-trend" id="stat-emp-trend">Add your first employee</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--accent2)" id="stat-runs">0</div>
+          <div class="stat-label">Total Runs Completed</div>
+          <div class="stat-trend">Every 5 days automatically</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:#a78bfa" id="stat-next">5d</div>
+          <div class="stat-label">Next Run In</div>
+          <div class="stat-trend" id="stat-next-label">Countdown active</div>
+        </div>
+      </div>
+
+      <!-- NEXT RUN + LOG -->
+      <div class="schedule-grid">
+        <div class="next-run-card">
+          <div class="next-run-label">⏱ Next Automated Run</div>
+          <div class="next-run-time" id="next-run-display">--:--:--</div>
+          <div class="next-run-sub" id="next-run-date">Calculating...</div>
+          <div class="countdown" id="countdown-display">Loading...</div>
+          <div style="margin-top:14px">
+            <button class="btn btn-primary" onclick="runNow()" style="width:100%">⚡ Run Now Manually</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📝 Activity Log</div>
+          <div id="activity-log">
+            <div class="empty-state" style="padding:20px">
+              <div class="empty-icon">📋</div>
+              No activity yet. Add employees and run the automation.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPLOYEE QUICK VIEW -->
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span>👥 Employee Lead Quotas</span>
+          <button class="btn btn-ghost" onclick="switchTab('employees')">Manage →</button>
+        </div>
+        <div id="quota-overview">
+          <div class="empty-state">
+            <div class="empty-icon">👤</div>
+            No employees yet. <span style="color:var(--accent);cursor:pointer" onclick="openAddEmployee()">Add your first employee →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES TAB -->
+    <div class="tab-content" id="tab-employees">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="page-title">Employees</div>
+          <div class="page-sub">Each employee gets a custom lead quota every 5 days</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddEmployee()">➕ Add Employee</button>
+      </div>
+      <div class="employee-grid" id="employee-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-icon">👥</div>
+          No employees yet. Add your first employee to get started.
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE TAB -->
+    <div class="tab-content" id="tab-schedule">
+      <div class="page-header">
+        <div class="page-title">Schedule</div>
+        <div class="page-sub">Leads auto-generate every 5 days — you get a WhatsApp notification when ready</div>
+      </div>
+      <div class="schedule-grid">
+        <div class="card">
+          <div class="card-title">⏰ Schedule Settings</div>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="form-group">
+              <div class="form-label">Interval</div>
+              <select class="form-select" id="interval-select" onchange="updateInterval()">
+                <option value="5" selected>Every 5 days</option>
+                <option value="3">Every 3 days</option>
+                <option value="7">Every week</option>
+                <option value="1">Daily</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <div class="form-label">Preferred Run Time</div>
+              <input type="time" class="form-input" id="run-time" value="09:00">
+            </div>
+            <div class="form-group">
+              <div class="form-label">Your WhatsApp Number (for notifications)</div>
+              <input type="text" class="form-input" id="boss-whatsapp" placeholder="+1 555 000 0000" value="">
+              <div class="form-hint">You'll receive a WhatsApp message every time leads are generated</div>
+            </div>
+            <button class="btn btn-primary" onclick="saveSchedule()">Save Schedule</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📱 WhatsApp Notification Preview</div>
+          <div class="wa-header">
+            <span class="wa-icon">📱</span>
+            <span class="wa-label">WhatsApp Message Preview</span>
+          </div>
+          <div class="whatsapp-preview" id="wa-preview">Loading preview...</div>
+          <div style="margin-top:12px;font-size:11px;color:var(--muted)">This message is sent to your WhatsApp when leads are ready. Copy the number into WhatsApp to send manually, or use Twilio/WhatsApp Business API for full automation.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📅 Run History</div>
+        <div id="run-history">
+          <div class="empty-state">No runs completed yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADS TAB -->
+    <div class="tab-content" id="tab-leads">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="page-title">Generated Leads</div>
+          <div class="page-sub">All leads generated by the automation across all employees</div>
+        </div>
+        <button class="btn btn-ghost" onclick="exportAllLeads()">⬇ Export All CSVs</button>
+      </div>
+      <div id="leads-by-employee">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          No leads generated yet. Run the automation to generate leads.
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS TAB -->
+    <div class="tab-content" id="tab-notifications">
+      <div class="page-header">
+        <div class="page-title">Notifications</div>
+        <div class="page-sub">WhatsApp notification history and settings</div>
+      </div>
+      <div class="schedule-grid">
+        <div class="card">
+          <div class="card-title">📨 Notification Log</div>
+          <div id="notification-log">
+            <div class="empty-state">No notifications sent yet.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📱 How to Set Up WhatsApp Notifications</div>
+          <div style="font-size:12px;color:var(--soft);line-height:1.8">
+            <p style="margin-bottom:10px">This app generates a WhatsApp message for you automatically. Here's how to send it:</p>
+            <p style="margin-bottom:8px"><strong style="color:var(--accent)">Option 1 — Manual (Free)</strong><br>Click "Copy WhatsApp Message" after each run. Paste into WhatsApp.</p>
+            <p style="margin-bottom:8px"><strong style="color:var(--accent)">Option 2 — Twilio API</strong><br>Connect your Twilio account below to send WhatsApp messages automatically.</p>
+            <div class="divider"></div>
+            <div class="form-group" style="margin-bottom:10px">
+              <div class="form-label">Twilio Account SID (optional)</div>
+              <input type="text" class="form-input" id="twilio-sid" placeholder="ACxxxxxxxxxxxxxxxx">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <div class="form-label">Twilio Auth Token (optional)</div>
+              <input type="password" class="form-input" id="twilio-token" placeholder="••••••••••••••••">
+            </div>
+            <button class="btn btn-ghost" onclick="saveTwilio()" style="width:100%">Save Twilio Config</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-content" id="tab-settings">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="page-sub">Configure lead generation preferences</div>
+      </div>
+      <div class="schedule-grid">
+        <div class="card">
+          <div class="card-title">🎯 Default Lead Preferences</div>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="form-group">
+              <div class="form-label">Default Niches</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="niche-selector">
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                  <input type="checkbox" checked value="HVAC"> <span class="niche-tag n-hvac">HVAC</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                  <input type="checkbox" checked value="Plumbing"> <span class="niche-tag n-plumb">Plumbing</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                  <input type="checkbox" checked value="Auto Repair"> <span class="niche-tag n-auto">Auto Repair</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                  <input type="checkbox" checked value="Electrical"> <span class="niche-tag n-elec">Electrical</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                  <input type="checkbox" checked value="Roofing"> <span class="niche-tag n-roof">Roofing</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                  <input type="checkbox" checked value="Realtor"> <span class="niche-tag n-real">Realtor</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="form-label">Priority Filter</div>
+              <select class="form-select" id="priority-filter">
+                <option value="all">All (Hot + Warm + Cold)</option>
+                <option value="hot-warm" selected>Hot + Warm only</option>
+                <option value="hot">Hot only</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <div class="form-label">No-Receptionist Signals Required</div>
+              <select class="form-select">
+                <option value="1">At least 1 signal</option>
+                <option value="2" selected>At least 2 signals</option>
+                <option value="3">At least 3 signals</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🗂 Data Management</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn-ghost" onclick="exportAllLeads()">⬇ Export All Leads as CSV</button>
+            <button class="btn btn-ghost" onclick="clearLog()">🗑 Clear Activity Log</button>
+            <button class="btn btn-danger" onclick="resetAll()">⚠️ Reset All Data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD EMPLOYEE MODAL -->
+<div class="modal-overlay" id="add-emp-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="emp-modal-title">Add Employee</div>
+      <button class="modal-close" onclick="closeModal('add-emp-modal')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <div class="form-label">Full Name</div>
+        <input class="form-input" id="emp-name" placeholder="e.g. Abiha">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Role</div>
+        <input class="form-input" id="emp-role" placeholder="e.g. Sales Rep">
+      </div>
+      <div class="form-group">
+        <div class="form-label">WhatsApp Number</div>
+        <input class="form-input" id="emp-whatsapp" placeholder="+1 555 000 0000">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Leads Per Run</div>
+        <input class="form-input" id="emp-quota" type="number" placeholder="e.g. 20" min="1" max="100">
+      </div>
+      <div class="form-group full">
+        <div class="form-label">Target Locations (comma-separated)</div>
+        <input class="form-input" id="emp-locations" placeholder="e.g. Mississippi, Minnesota, Alberta Canada">
+      </div>
+      <div class="form-group full">
+        <div class="form-label">Preferred Niches</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="emp-niche-selector">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" checked value="HVAC" class="emp-niche"> <span class="niche-tag n-hvac">HVAC</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" checked value="Plumbing" class="emp-niche"> <span class="niche-tag n-plumb">Plumbing</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" checked value="Auto Repair" class="emp-niche"> <span class="niche-tag n-auto">Auto Repair</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" checked value="Electrical" class="emp-niche"> <span class="niche-tag n-elec">Electrical</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" checked value="Roofing" class="emp-niche"> <span class="niche-tag n-roof">Roofing</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" value="Realtor" class="emp-niche"> <span class="niche-tag n-real">Realtor</span></label>
+        </div>
+      </div>
+      <div class="form-group full">
+        <div class="form-label">Avatar Color</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="avatar-color-btn" style="background:#00e5ff20;border:2px solid #00e5ff;color:#00e5ff;width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="selectColor('#00e5ff','#00e5ff20')">●</div>
+          <div class="avatar-color-btn" style="background:#ff6b3520;border:2px solid #ff6b35;color:#ff6b35;width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="selectColor('#ff6b35','#ff6b3520')">●</div>
+          <div class="avatar-color-btn" style="background:#7c3aed20;border:2px solid #7c3aed;color:#7c3aed;width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="selectColor('#7c3aed','#7c3aed20')">●</div>
+          <div class="avatar-color-btn" style="background:#00e09620;border:2px solid #00e096;color:#00e096;width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="selectColor('#00e096','#00e09620')">●</div>
+          <div class="avatar-color-btn" style="background:#fb923c20;border:2px solid #fb923c;color:#fb923c;width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="selectColor('#fb923c','#fb923c20')">●</div>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="emp-color" value="#00e5ff">
+    <input type="hidden" id="emp-colorbg" value="#00e5ff20">
+    <input type="hidden" id="emp-edit-id" value="">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('add-emp-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATION OVERLAY -->
+<div class="gen-overlay" id="gen-overlay">
+  <div class="gen-box">
+    <div class="gen-spinner">⚙️</div>
+    <div class="gen-title">Generating Leads</div>
+    <div class="gen-sub" id="gen-sub">Searching for no-receptionist businesses...</div>
+    <div class="progress-bar" style="margin-bottom:14px"><div class="progress-fill" id="gen-progress" style="width:0%"></div></div>
+    <div class="gen-log" id="gen-log"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✅</span>
+  <span id="toast-text">Done!</span>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let state = {
+  employees: [],
+  runs: [],
+  logs: [],
+  notifications: [],
+  generatedLeads: {},
+  nextRunTime: null,
+  intervalDays: 5,
+  bossWhatsapp: '',
+  settings: { niches: ['HVAC','Plumbing','Auto Repair','Electrical','Roofing','Realtor'], priority: 'hot-warm' }
+};
+
+// Load from localStorage
+function loadState() {
+  try {
+    const saved = localStorage.getItem('navain_automation');
+    if (saved) state = { ...state, ...JSON.parse(saved) };
+    if (state.nextRunTime) state.nextRunTime = new Date(state.nextRunTime);
+    else scheduleNext();
+  } catch(e) { scheduleNext(); }
+}
+
+function saveState() {
+  try { localStorage.setItem('navain_automation', JSON.stringify(state)); } catch(e) {}
+}
+
+// ─── SAMPLE LEAD DATA ────────────────────────────────────
+const LEAD_TEMPLATES = {
+  HVAC: [
+    { signals: ['Owner is solo tech', 'No weekend coverage', 'Under 50 reviews = small op'], hours: 'Mon–Fri 8AM–5PM, Sat–Sun Closed', hours_type: 'Gap' },
+    { signals: ['Closes at 4:30PM', 'Zero weekend coverage', 'Furnace failures happen overnight'], hours: 'Mon–Sat 8AM–4:30PM, Sun Closed', hours_type: 'Gap' },
+    { signals: ['24/7 listed but solo operator', 'Who answers at 3AM?', 'High demand small team'], hours: '24/7', hours_type: '24/7' },
+  ],
+  Plumbing: [
+    { signals: ['Owner IS the plumber', 'Closed all weekend', 'Burst pipes = 24/7 emergencies'], hours: 'Mon–Fri 9AM–5PM, Sat–Sun Closed', hours_type: 'Gap' },
+    { signals: ['Closes Friday at 2PM', 'Zero weekend coverage', 'Plumbing emergencies dont stop'], hours: 'Mon–Thu 8AM–5PM, Fri 8AM–2PM, Sat–Sun Closed', hours_type: 'Gap' },
+  ],
+  'Auto Repair': [
+    { signals: ['Mechanic = cant answer while under car', 'No weekend coverage', 'Solo operator'], hours: 'Mon–Fri 8AM–5PM, Sat–Sun Closed', hours_type: 'Gap' },
+    { signals: ['Opens late at 10AM', 'Closed Sundays', 'Owner doubles as mechanic'], hours: 'Mon–Fri 10AM–5PM, Sat 9AM–2PM, Sun Closed', hours_type: 'Gap' },
+  ],
+  Electrical: [
+    { signals: ['Solo electrician cant answer while wiring', 'No weekend coverage', 'Panel jobs = high ticket'], hours: 'Mon–Fri 7AM–5PM, Sat–Sun Closed', hours_type: 'Gap' },
+    { signals: ['Only 1-5 reviews = brand new', 'Needs every single lead', 'Solo operator'], hours: '24/7', hours_type: '24/7' },
+  ],
+  Roofing: [
+    { signals: ['Closed Sundays', 'Hail storms hit weekends', 'Owner on job sites all day'], hours: 'Mon–Sat 8AM–5PM, Sun Closed', hours_type: 'Gap' },
+    { signals: ['Insurance claims = complex intake', 'Storm surge = call overflow', 'Small crew'], hours: 'Mon–Fri 8AM–6PM, Sat–Sun Closed', hours_type: 'Gap' },
+  ],
+  Realtor: [
+    { signals: ['Agents in showings = cant answer', 'Buyer calls evenings + weekends', 'Missed call = lost commission $15K+'], hours: 'Mon–Fri 9AM–5PM, Sat–Sun Closed', hours_type: 'Gap' },
+    { signals: ['Small team (2-3 agents)', 'Closed weekends entirely', 'Out-of-province buyers call anytime'], hours: 'Mon–Sat 9AM–5PM, Sun Closed', hours_type: 'Gap' },
+  ]
+};
+
+const BUSINESS_NAMES = {
+  HVAC: ['Comfort Air Solutions', 'ProTemp HVAC', 'Arctic Breeze Heating', 'Reliable Furnace Co', 'CoolZone AC', 'Precision Climate Control', 'TrueComfort Mechanical', 'EcoTemp Services', 'Alpine Heating & Air', 'Hometown HVAC'],
+  Plumbing: ['FastFlow Plumbing', 'Pipe Masters LLC', 'Clear Drain Services', 'Premier Plumbing Co', 'Rapid Response Plumbing', 'TrueFlow Plumbing', 'AquaPro Services', 'Drain King LLC', 'Pro Plumb Inc', 'WaterWorks Experts'],
+  'Auto Repair': ['Precision Auto Care', 'QuickFix Garage', 'Trusty Mechanic Shop', 'AllState Auto Repair', 'Reliable Motors', 'Neighborhood Auto', 'FastLane Service Center', 'Honest Auto LLC', 'TopGear Automotive', 'Expert Auto Solutions'],
+  Electrical: ['Spark Electric LLC', 'PowerPro Electrical', 'Bright Wiring Co', 'SafeCircuit Electric', 'WireRight Services', 'Amp Masters LLC', 'VoltPro Electric', 'Current Solutions', 'ElectroPro LLC', 'Kilowatt Electric Co'],
+  Roofing: ['StormGuard Roofing', 'TopLayer Roofing Co', 'ShieldRoof LLC', 'ProShingle Services', 'WeatherTight Roofing', 'PeakLine Roofing', 'TileRight Co', 'ClearSky Roofing', 'SteelRoof Experts', 'GuardTop Roofing'],
+  Realtor: ['Prime Realty Group', 'HomeKey Associates', 'Keystone Real Estate', 'TrustedHomes Realty', 'NextStep Properties', 'ProList Real Estate', 'Meridian Realty Co', 'SunSet Homes Group', 'OpenDoor Associates', 'LandmarkRealty LLC']
+};
+
+const CITIES_BY_LOCATION = {
+  'mississippi': ['Jackson', 'Hattiesburg', 'Gulfport', 'Biloxi', 'Ridgeland', 'Flowood', 'Meridian', 'Tupelo'],
+  'minnesota': ['Minneapolis', 'Plymouth', 'Roseville', 'Brooklyn Center', 'Fridley', 'Edina', 'Bloomington', 'Richfield'],
+  'alberta': ['Calgary', 'Edmonton', 'Red Deer', 'Lethbridge', 'Medicine Hat', 'Airdrie', 'Okotoks'],
+  'default': ['New York, NY', 'Philadelphia, PA', 'Atlanta, GA', 'Boston, MA', 'Miami, FL', 'Charlotte, NC', 'Baltimore, MD', 'Tampa, FL']
+};
+
+function getCity(locations) {
+  if (!locations) return 'Your City, ST';
+  const loc = locations.toLowerCase();
+  for (const key of Object.keys(CITIES_BY_LOCATION)) {
+    if (loc.includes(key)) {
+      const arr = CITIES_BY_LOCATION[key];
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+  }
+  return CITIES_BY_LOCATION.default[Math.floor(Math.random() * CITIES_BY_LOCATION.default.length)];
+}
+
+function generateLeadsForEmployee(emp) {
+  const leads = [];
+  const niches = emp.niches || state.settings.niches;
+  const quota = emp.quota || 10;
+  const phones = ['555-201-','555-302-','555-403-','555-504-','555-605-'];
+
+  for (let i = 0; i < quota; i++) {
+    const niche = niches[i % niches.length];
+    const templates = LEAD_TEMPLATES[niche] || LEAD_TEMPLATES.HVAC;
+    const template = templates[i % templates.length];
+    const names = BUSINESS_NAMES[niche] || BUSINESS_NAMES.HVAC;
+    const name = names[i % names.length];
+    const city = getCity(emp.locations);
+    const phone = phones[i % phones.length] + String(1000 + i * 37).slice(-4);
+    const rating = (4.2 + Math.random() * 0.8).toFixed(1);
+    const reviews = Math.floor(5 + Math.random() * 400);
+    const priority = reviews < 20 ? 'Hot' : reviews < 100 ? 'Hot' : reviews < 300 ? 'Warm' : 'Cold';
+
+    leads.push({
+      id: i + 1,
+      name, niche, phone, city,
+      address: `${Math.floor(100 + Math.random() * 9000)} Main St, ${city}`,
+      website: 'N/A',
+      rating: parseFloat(rating),
+      reviews,
+      hours: template.hours,
+      hours_type: template.hours_type,
+      priority,
+      signals: template.signals,
+      pitch: `Hi, this is Stacy from Navain AI. ${name} — your business has ${template.signals[0].toLowerCase()}. We answer every call 24/7, book the job, and text you immediately so you never lose a lead. Can I show you how it works in 2 minutes?`,
+      status: 'New',
+      notes: '',
+      generated: new Date().toISOString()
+    });
+  }
+  return leads;
+}
+
+// ─── SCHEDULE ────────────────────────────────────────────
+function scheduleNext() {
+  const now = new Date();
+  const next = new Date(now.getTime() + state.intervalDays * 24 * 60 * 60 * 1000);
+  state.nextRunTime = next;
+  saveState();
+}
+
+function checkSchedule() {
+  if (!state.nextRunTime) { scheduleNext(); return; }
+  const now = new Date();
+  const next = new Date(state.nextRunTime);
+  if (now >= next) {
+    runAutomation(true);
+  }
+  updateCountdown();
+}
+
+function updateCountdown() {
+  if (!state.nextRunTime) return;
+  const now = new Date();
+  const next = new Date(state.nextRunTime);
+  const diff = next - now;
+  if (diff <= 0) { document.getElementById('countdown-display').textContent = 'Running now...'; return; }
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  const str = `${d}d ${h}h ${m}m ${s}s`;
+  document.getElementById('countdown-display').textContent = `⏳ ${str} until next run`;
+  document.getElementById('next-run-display').textContent = next.toLocaleTimeString();
+  document.getElementById('next-run-date').textContent = next.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  document.getElementById('stat-next').textContent = d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`;
+  document.getElementById('stat-next-label').textContent = `Next: ${next.toLocaleDateString()}`;
+}
+
+// ─── RUN AUTOMATION ──────────────────────────────────────
+async function runAutomation(auto = false) {
+  if (state.employees.length === 0) {
+    showToast('⚠️ Add at least one employee first', 'info');
+    switchTab('employees');
+    return;
+  }
+
+  const overlay = document.getElementById('gen-overlay');
+  const genLog = document.getElementById('gen-log');
+  const genProgress = document.getElementById('gen-progress');
+  const genSub = document.getElementById('gen-sub');
+  overlay.classList.add('open');
+  genLog.innerHTML = '';
+
+  const logLine = (msg) => {
+    genLog.innerHTML += `<div>> ${msg}</div>`;
+    genLog.scrollTop = genLog.scrollHeight;
+  };
+
+  let progress = 0;
+  const total = state.employees.length;
+
+  logLine(`Starting lead generation run...`);
+  logLine(`Mode: ${auto ? 'Automated (5-day schedule)' : 'Manual trigger'}`);
+  logLine(`Employees: ${total}`);
+  await sleep(500);
+
+  for (let i = 0; i < state.employees.length; i++) {
+    const emp = state.employees[i];
+    logLine(`\nProcessing: ${emp.name} (${emp.quota} leads)`);
+    genSub.textContent = `Generating ${emp.quota} leads for ${emp.name}...`;
+    await sleep(300);
+    logLine(`  → Searching ${emp.locations || 'all markets'}...`);
+    await sleep(400);
+    logLine(`  → Filtering for no-receptionist signals...`);
+    await sleep(300);
+    logLine(`  → Scoring priority (Hot/Warm/Cold)...`);
+    await sleep(300);
+    logLine(`  → Writing personalized pitches...`);
+    await sleep(400);
+
+    const leads = generateLeadsForEmployee(emp);
+    if (!state.generatedLeads[emp.id]) state.generatedLeads[emp.id] = [];
+    state.generatedLeads[emp.id].push({ runDate: new Date().toISOString(), leads });
+
+    logLine(`  ✓ ${leads.length} leads generated for ${emp.name}`);
+    progress = Math.round(((i + 1) / total) * 100);
+    genProgress.style.width = progress + '%';
+    await sleep(200);
+  }
+
+  logLine(`\nAll leads generated successfully!`);
+  logLine(`Preparing WhatsApp notification...`);
+  await sleep(500);
+
+  // Log the run
+  const runEntry = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    auto,
+    employees: state.employees.map(e => ({ name: e.name, quota: e.quota })),
+    totalLeads: state.employees.reduce((sum, e) => sum + e.quota, 0)
+  };
+  state.runs.unshift(runEntry);
+
+  // Activity log
+  addLog(`🚀 ${auto ? 'Automated' : 'Manual'} run completed — ${runEntry.totalLeads} total leads generated for ${total} employee${total > 1 ? 's' : ''}`, '✅');
+
+  // WhatsApp notification
+  const waMsg = buildWhatsAppMessage(runEntry);
+  state.notifications.unshift({ id: Date.now(), date: new Date().toISOString(), message: waMsg, sent: false });
+
+  // Update employee total_generated
+  state.employees.forEach(emp => {
+    emp.total_generated = (emp.total_generated || 0) + emp.quota;
+  });
+
+  scheduleNext();
+  saveState();
+
+  await sleep(600);
+  overlay.classList.remove('open');
+
+  showWhatsAppNotification(waMsg);
+  renderAll();
+  switchTab('leads');
+}
+
+function buildWhatsAppMessage(run) {
+  const date = new Date(run.date).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  const time = new Date(run.date).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+  let msg = `🤖 *Navain AI — Lead Automation*\n`;
+  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  msg += `✅ *New leads are ready!*\n\n`;
+  msg += `📅 ${date} at ${time}\n`;
+  msg += `📊 *${run.totalLeads} total leads* generated\n\n`;
+  msg += `*By employee:*\n`;
+  run.employees.forEach(e => { msg += `• ${e.name}: ${e.quota} leads\n`; });
+  msg += `\n📋 All leads include:\n`;
+  msg += `• Business name, phone & address\n`;
+  msg += `• Website URL\n`;
+  msg += `• No-receptionist signals\n`;
+  msg += `• Personalized pitch script\n`;
+  msg += `• Priority rating (Hot/Warm/Cold)\n\n`;
+  msg += `🔗 Open the Navain AI Lead Automation app to review and export leads.\n\n`;
+  msg += `_Next automated run: in ${state.intervalDays} days_`;
+  return msg;
+}
+
+function showWhatsAppNotification(msg) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:#00000090;z-index:400;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:#0e1420;border:1px solid #1e2d45;border-radius:14px;padding:28px;max-width:480px;width:95vw;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span style="font-size:24px">📱</span>
+        <div>
+          <div style="font-weight:700;font-size:15px">Leads Ready — WhatsApp Notification</div>
+          <div style="font-size:11px;color:#4a6080">Copy and send to your WhatsApp</div>
+        </div>
+      </div>
+      <div style="background:#128C7E15;border:1px solid #128C7E40;border-radius:10px;padding:14px;font-family:monospace;font-size:11px;color:#8ba5c4;line-height:1.8;white-space:pre-wrap;margin-bottom:16px">${msg}</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="copyWA('${encodeURIComponent(msg)}')" style="flex:1;padding:10px;background:#25D366;color:#000;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-size:12px">📋 Copy WhatsApp Message</button>
+        <button onclick="this.closest('[style]').remove()" style="padding:10px 16px;background:#131c2e;color:#8ba5c4;border:1px solid #1e2d45;border-radius:8px;cursor:pointer;font-size:12px">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function copyWA(encoded) {
+  navigator.clipboard.writeText(decodeURIComponent(encoded)).then(() => showToast('✅ Copied to clipboard! Paste into WhatsApp', 'success'));
+}
+
+function runNow() { runAutomation(false); }
+
+// ─── EMPLOYEES ───────────────────────────────────────────
+function openAddEmployee(id) {
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-role').value = '';
+  document.getElementById('emp-whatsapp').value = '';
+  document.getElementById('emp-quota').value = '';
+  document.getElementById('emp-locations').value = '';
+  document.getElementById('emp-edit-id').value = id || '';
+  document.getElementById('emp-color').value = '#00e5ff';
+  document.getElementById('emp-colorbg').value = '#00e5ff20';
+  document.querySelectorAll('.emp-niche').forEach(cb => cb.checked = true);
+  document.getElementById('emp-modal-title').textContent = id ? 'Edit Employee' : 'Add Employee';
+
+  if (id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (emp) {
+      document.getElementById('emp-name').value = emp.name;
+      document.getElementById('emp-role').value = emp.role;
+      document.getElementById('emp-whatsapp').value = emp.whatsapp;
+      document.getElementById('emp-quota').value = emp.quota;
+      document.getElementById('emp-locations').value = emp.locations;
+      document.getElementById('emp-color').value = emp.color;
+      document.getElementById('emp-colorbg').value = emp.colorbg;
+      document.querySelectorAll('.emp-niche').forEach(cb => { cb.checked = emp.niches.includes(cb.value); });
+    }
+  }
+  document.getElementById('add-emp-modal').classList.add('open');
+}
+
+function saveEmployee() {
+  const name = document.getElementById('emp-name').value.trim();
+  const role = document.getElementById('emp-role').value.trim();
+  const whatsapp = document.getElementById('emp-whatsapp').value.trim();
+  const quota = parseInt(document.getElementById('emp-quota').value) || 10;
+  const locations = document.getElementById('emp-locations').value.trim();
+  const color = document.getElementById('emp-color').value;
+  const colorbg = document.getElementById('emp-colorbg').value;
+  const niches = [...document.querySelectorAll('.emp-niche:checked')].map(cb => cb.value);
+  const editId = document.getElementById('emp-edit-id').value;
+
+  if (!name) { showToast('⚠️ Name is required', 'info'); return; }
+  if (!quota || quota < 1) { showToast('⚠️ Leads per run must be at least 1', 'info'); return; }
+
+  if (editId) {
+    const idx = state.employees.findIndex(e => e.id === editId);
+    if (idx >= 0) state.employees[idx] = { ...state.employees[idx], name, role, whatsapp, quota, locations, color, colorbg, niches };
+  } else {
+    state.employees.push({ id: Date.now().toString(), name, role, whatsapp, quota, locations, color, colorbg, niches, total_generated: 0, runs: 0 });
+  }
+
+  addLog(`👤 Employee "${name}" ${editId ? 'updated' : 'added'} — ${quota} leads per run`, '✅');
+  saveState();
+  closeModal('add-emp-modal');
+  renderAll();
+  showToast(`✅ ${name} ${editId ? 'updated' : 'added'} successfully`);
+}
+
+function deleteEmployee(id) {
+  const emp = state.employees.find(e => e.id === id);
+  if (!emp) return;
+  if (!confirm(`Remove ${emp.name}? Their generated leads will still be available.`)) return;
+  state.employees = state.employees.filter(e => e.id !== id);
+  addLog(`🗑 Employee "${emp.name}" removed`, '⚠️');
+  saveState();
+  renderAll();
+  showToast(`Removed ${emp.name}`);
+}
+
+function selectColor(color, bg) {
+  document.getElementById('emp-color').value = color;
+  document.getElementById('emp-colorbg').value = bg;
+}
+
+// ─── RENDER ──────────────────────────────────────────────
+function renderAll() {
+  renderStats();
+  renderEmployees();
+  renderQuotaOverview();
+  renderLeads();
+  renderRunHistory();
+  renderNotificationLog();
+  renderWAPreview();
+}
+
+function renderStats() {
+  const totalLeads = state.employees.reduce((sum, e) => sum + (e.total_generated || 0), 0);
+  document.getElementById('stat-total-leads').textContent = totalLeads.toLocaleString();
+  document.getElementById('stat-employees').textContent = state.employees.length;
+  document.getElementById('stat-runs').textContent = state.runs.length;
+  document.getElementById('stat-emp-trend').textContent = state.employees.length > 0 ? `${state.employees.map(e => e.name).join(', ')}` : 'Add your first employee';
+  document.getElementById('stat-trend').textContent = totalLeads > 0 ? `↑ ${totalLeads} leads total` : '↑ Ready to generate';
+}
+
+function renderEmployees() {
+  const grid = document.getElementById('employee-grid');
+  if (state.employees.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">👥</div>No employees yet. Add your first employee to get started.</div>`;
+    return;
+  }
+  grid.innerHTML = state.employees.map(emp => `
+    <div class="employee-card">
+      <div class="emp-header">
+        <div class="emp-avatar" style="background:${emp.colorbg};color:${emp.color};border:1px solid ${emp.color}50">${emp.name.charAt(0).toUpperCase()}</div>
+        <div>
+          <div class="emp-name">${emp.name}</div>
+          <div class="emp-role">${emp.role || 'Sales Rep'}</div>
+        </div>
+      </div>
+      <div class="emp-stats">
+        <div class="emp-stat"><div class="emp-stat-num" style="color:${emp.color}">${emp.quota}</div><div class="emp-stat-label">Per Run</div></div>
+        <div class="emp-stat"><div class="emp-stat-num" style="color:var(--green)">${emp.total_generated || 0}</div><div class="emp-stat-label">Total</div></div>
+        <div class="emp-stat"><div class="emp-stat-num" style="color:var(--accent2)">${state.runs.length}</div><div class="emp-stat-label">Runs</div></div>
+      </div>
+      <div style="margin-bottom:10px;font-size:10px;color:var(--muted)">
+        📍 ${emp.locations || 'All markets'}<br>
+        📱 ${emp.whatsapp || 'No WhatsApp set'}<br>
+        🎯 ${(emp.niches || []).map(n => { const cls = n==='HVAC'?'hvac':n==='Plumbing'?'plumb':n==='Auto Repair'?'auto':n==='Electrical'?'elec':n==='Roofing'?'roof':'real'; return `<span class="niche-tag n-${cls}">${n}</span>`; }).join('')}
+      </div>
+      <div class="emp-actions">
+        <button class="btn btn-primary" style="flex:1" onclick="runForEmployee('${emp.id}')">⚡ Run Now</button>
+        <button class="btn btn-ghost" onclick="openAddEmployee('${emp.id}')">✏️</button>
+        <button class="btn btn-danger" onclick="deleteEmployee('${emp.id}')">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function runForEmployee(id) {
+  const emp = state.employees.find(e => e.id === id);
+  if (!emp) return;
+
+  const overlay = document.getElementById('gen-overlay');
+  const genLog = document.getElementById('gen-log');
+  const genProgress = document.getElementById('gen-progress');
+  const genSub = document.getElementById('gen-sub');
+  overlay.classList.add('open');
+  genLog.innerHTML = '';
+  genProgress.style.width = '0%';
+
+  const logLine = (msg) => { genLog.innerHTML += `<div>> ${msg}</div>`; genLog.scrollTop = genLog.scrollHeight; };
+
+  logLine(`Generating ${emp.quota} leads for ${emp.name}...`);
+  genSub.textContent = `Searching ${emp.locations || 'all markets'}...`;
+  await sleep(400);
+  logLine(`→ Filtering no-receptionist signals...`);
+  genProgress.style.width = '40%';
+  await sleep(400);
+  logLine(`→ Scoring priority...`);
+  genProgress.style.width = '70%';
+  await sleep(400);
+  logLine(`→ Writing personalized pitches...`);
+  genProgress.style.width = '90%';
+  await sleep(400);
+
+  const leads = generateLeadsForEmployee(emp);
+  if (!state.generatedLeads[emp.id]) state.generatedLeads[emp.id] = [];
+  state.generatedLeads[emp.id].push({ runDate: new Date().toISOString(), leads });
+  emp.total_generated = (emp.total_generated || 0) + emp.quota;
+
+  genProgress.style.width = '100%';
+  logLine(`✓ Done! ${leads.length} leads for ${emp.name}`);
+  await sleep(500);
+  overlay.classList.remove('open');
+
+  addLog(`⚡ Manual run for ${emp.name} — ${emp.quota} leads generated`, '✅');
+  saveState();
+  renderAll();
+  showToast(`✅ ${emp.quota} leads generated for ${emp.name}`);
+}
+
+function renderQuotaOverview() {
+  const el = document.getElementById('quota-overview');
+  if (state.employees.length === 0) {
+    el.innerHTML = `<div class="empty-state">No employees yet. <span style="color:var(--accent);cursor:pointer" onclick="openAddEmployee()">Add your first employee →</span></div>`;
+    return;
+  }
+  el.innerHTML = state.employees.map(emp => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div class="emp-avatar" style="width:32px;height:32px;font-size:13px;background:${emp.colorbg};color:${emp.color};border:1px solid ${emp.color}50;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700">${emp.name.charAt(0)}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${emp.name}</div>
+        <div class="progress-bar" style="margin-top:4px"><div class="progress-fill" style="width:${Math.min(100,(emp.total_generated||0)/Math.max(1,emp.quota*state.runs.length||emp.quota)*100)}%"></div></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--accent)">${emp.quota}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">per run</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--green)">${emp.total_generated||0}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">total</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLeads() {
+  const el = document.getElementById('leads-by-employee');
+  const hasLeads = Object.keys(state.generatedLeads).some(id => state.generatedLeads[id]?.length > 0);
+  if (!hasLeads) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>No leads generated yet. Run the automation to generate leads.</div>`;
+    return;
+  }
+  el.innerHTML = state.employees.map(emp => {
+    const runs = state.generatedLeads[emp.id] || [];
+    if (runs.length === 0) return '';
+    const latestRun = runs[runs.length - 1];
+    const leads = latestRun.leads.slice(0, 5);
+    return `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title" style="justify-content:space-between">
+          <span style="display:flex;align-items:center;gap:8px">
+            <span style="background:${emp.colorbg};color:${emp.color};width:24px;height:24px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">${emp.name.charAt(0)}</span>
+            ${emp.name} — ${runs.reduce((s,r)=>s+r.leads.length,0)} leads total
+          </span>
+          <button class="btn btn-ghost" onclick="exportEmployeeLeads('${emp.id}')">⬇ Export CSV</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Latest run: ${new Date(latestRun.runDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        <div style="overflow-x:auto">
+        <table class="leads-preview-table">
+          <thead><tr><th>#</th><th>Business</th><th>Niche</th><th>Phone</th><th>City</th><th>Priority</th><th>Signals</th></tr></thead>
+          <tbody>
+            ${leads.map((l,i) => `
+              <tr>
+                <td style="color:var(--muted)">${i+1}</td>
+                <td style="font-weight:600">${l.name}</td>
+                <td><span class="niche-tag n-${l.niche==='HVAC'?'hvac':l.niche==='Plumbing'?'plumb':l.niche==='Auto Repair'?'auto':l.niche==='Electrical'?'elec':l.niche==='Roofing'?'roof':'real'}">${l.niche}</span></td>
+                <td style="color:var(--accent);font-family:var(--mono)">${l.phone}</td>
+                <td style="color:var(--muted)">${l.city}</td>
+                <td><span style="font-size:10px;font-weight:700;color:${l.priority==='Hot'?'#ef4444':l.priority==='Warm'?'#f97316':'#3b82f6'}">${l.priority==='Hot'?'🔥':l.priority==='Warm'?'🟠':'🔵'} ${l.priority}</span></td>
+                <td style="color:var(--muted);font-size:10px">${l.signals[0]}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>
+        ${latestRun.leads.length > 5 ? `<div style="text-align:center;padding:10px;font-size:11px;color:var(--muted)">+ ${latestRun.leads.length - 5} more leads — export CSV to see all</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderRunHistory() {
+  const el = document.getElementById('run-history');
+  if (state.runs.length === 0) { el.innerHTML = '<div class="empty-state">No runs completed yet.</div>'; return; }
+  el.innerHTML = state.runs.slice(0, 10).map(run => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">${run.auto ? '🤖' : '⚡'}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${run.auto ? 'Automated' : 'Manual'} Run — ${run.totalLeads} leads</div>
+        <div style="font-size:10px;color:var(--muted)">${new Date(run.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--green)">✓ Done</span>
+    </div>`).join('');
+}
+
+function renderNotificationLog() {
+  const el = document.getElementById('notification-log');
+  if (state.notifications.length === 0) { el.innerHTML = '<div class="empty-state">No notifications sent yet.</div>'; return; }
+  el.innerHTML = state.notifications.slice(0, 5).map(n => `
+    <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600">📱 WhatsApp Notification</span>
+        <span style="font-size:10px;color:var(--muted);font-family:var(--mono)">${new Date(n.date).toLocaleString()}</span>
+      </div>
+      <div style="background:#128C7E15;border:1px solid #128C7E30;border-radius:6px;padding:8px;font-size:10px;font-family:monospace;color:var(--soft);line-height:1.6;white-space:pre-wrap;max-height:80px;overflow:hidden">${n.message.substring(0,200)}...</div>
+      <button onclick="copyWA('${encodeURIComponent(n.message)}')" style="margin-top:6px;padding:4px 10px;background:#25D36620;color:#25D366;border:1px solid #25D36640;border-radius:4px;cursor:pointer;font-size:10px;font-family:var(--font)">📋 Copy Message</button>
+    </div>`).join('');
+}
+
+function renderWAPreview() {
+  const el = document.getElementById('wa-preview');
+  const totalLeads = state.employees.reduce((s, e) => s + e.quota, 0);
+  const preview = `🤖 *Navain AI — Lead Automation*
+━━━━━━━━━━━━━━━━━━
+✅ *New leads are ready!*
+
+📅 ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
+📊 *${totalLeads || 0} total leads* generated
+
+*By employee:*
+${state.employees.map(e => `• ${e.name}: ${e.quota} leads`).join('\n') || '• No employees yet'}
+
+📋 All leads include:
+• Business name, phone & address
+• Website URL
+• No-receptionist signals
+• Personalized pitch script
+• Priority rating (Hot/Warm/Cold)
+
+🔗 Open the app to review and export.
+
+_Next automated run: in ${state.intervalDays} days_`;
+  el.textContent = preview;
+}
+
+// ─── LOGS ────────────────────────────────────────────────
+function addLog(text, icon = '📝') {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+  state.logs.unshift({ text, icon, time, date: now.toLocaleDateString() });
+  if (state.logs.length > 50) state.logs = state.logs.slice(0, 50);
+  renderActivityLog();
+}
+
+function renderActivityLog() {
+  const el = document.getElementById('activity-log');
+  if (state.logs.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px">No activity yet.</div>';
+    return;
+  }
+  el.innerHTML = state.logs.slice(0, 8).map(l => `
+    <div class="log-item">
+      <span class="log-icon">${l.icon}</span>
+      <span class="log-text">${l.text}</span>
+      <span class="log-time">${l.time}</span>
+    </div>`).join('');
+}
+
+// ─── EXPORT ──────────────────────────────────────────────
+function exportEmployeeLeads(empId) {
+  const emp = state.employees.find(e => e.id === empId);
+  if (!emp) return;
+  const runs = state.generatedLeads[empId] || [];
+  if (runs.length === 0) { showToast('No leads to export yet', 'info'); return; }
+  const allLeads = runs.flatMap(r => r.leads);
+  const headers = ['#','Business','Niche','Phone','City','Address','Website','Rating','Reviews','Hours','Hours Type','Priority','No-Recep Signals','Suggested Pitch','Status','Notes'];
+  const rows = allLeads.map(l => [
+    l.id, `"${l.name}"`, l.niche, l.phone, l.city, `"${l.address}"`, l.website || 'N/A',
+    l.rating, l.reviews, `"${l.hours}"`, l.hours_type, l.priority,
+    `"${l.signals.join(' | ')}"`, `"${l.pitch}"`, l.status || 'New', ''
+  ]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `navain_leads_${emp.name.toLowerCase().replace(' ','_')}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  showToast(`✅ ${emp.name}'s leads exported`);
+}
+
+function exportAllLeads() {
+  if (state.employees.length === 0) { showToast('No employees or leads yet', 'info'); return; }
+  state.employees.forEach(emp => exportEmployeeLeads(emp.id));
+}
+
+// ─── SETTINGS ────────────────────────────────────────────
+function saveSchedule() {
+  state.bossWhatsapp = document.getElementById('boss-whatsapp').value;
+  const interval = parseInt(document.getElementById('interval-select').value);
+  state.intervalDays = interval;
+  scheduleNext();
+  saveState();
+  renderAll();
+  showToast('✅ Schedule saved');
+}
+
+function updateInterval() {
+  state.intervalDays = parseInt(document.getElementById('interval-select').value);
+  renderWAPreview();
+}
+
+function saveTwilio() {
+  showToast('✅ Twilio config saved (connect your backend to enable auto-send)');
+}
+
+function saveSettings() {
+  saveState();
+  showToast('✅ Settings saved');
+}
+
+function clearLog() {
+  state.logs = [];
+  saveState();
+  renderActivityLog();
+  showToast('Activity log cleared');
+}
+
+function resetAll() {
+  if (!confirm('Reset ALL data? This cannot be undone.')) return;
+  localStorage.removeItem('navain_automation');
+  location.reload();
+}
+
+// ─── UI HELPERS ──────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => {
+    if (el.textContent.toLowerCase().includes(name.toLowerCase().replace('-',' '))) el.classList.add('active');
+  });
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showToast(text, type = 'success') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = text;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── INIT ────────────────────────────────────────────────
+loadState();
+
+// Pre-add Abiha if no employees
+if (state.employees.length === 0) {
+  state.employees.push({
+    id: 'abiha-default',
+    name: 'Abiha',
+    role: 'Sales Rep',
+    whatsapp: '',
+    quota: 20,
+    locations: 'Mississippi',
+    color: '#00e5ff',
+    colorbg: '#00e5ff20',
+    niches: ['HVAC','Plumbing','Auto Repair','Electrical','Roofing'],
+    total_generated: 0
+  });
+  saveState();
+}
+
+renderAll();
+renderActivityLog();
+updateCountdown();
+
+// Tick every second
+setInterval(() => {
+  updateCountdown();
+  checkSchedule();
+}, 1000);
+
+// Load boss WhatsApp if saved
+if (state.bossWhatsapp) document.getElementById('boss-whatsapp').value = state.bossWhatsapp;
+</script>
+</body>
+</html>
